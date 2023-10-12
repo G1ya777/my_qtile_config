@@ -32,12 +32,18 @@ import os
 import subprocess
 from libqtile import hook
 
+from libqtile.log_utils import logger
+
+
 @hook.subscribe.startup_once
 def autostart():
     home = os.path.expanduser('~/.config/qtile/autostart.sh')
     subprocess.Popen([home])
 
 
+focus_on_window_activation = "focus"
+bring_front_click = True
+follow_mouse_focus = False
 
 mod = "mod4"
 terminal = guess_terminal()
@@ -50,18 +56,23 @@ keys = [
     Key([mod], "l", lazy.layout.right(), desc="Move focus to right"),
     Key([mod], "j", lazy.layout.down(), desc="Move focus down"),
     Key([mod], "k", lazy.layout.up(), desc="Move focus up"),
-    Key([mod], "space", lazy.layout.next(), desc="Move window focus to other window"),
+    Key([mod], "space", lazy.layout.next(),
+        desc="Move window focus to other window"),
     # Move windows in stack.
     Key([mod], "c", lazy.layout.client_to_next()),
     # Moving out of range in Columns layout will create new column.
-    Key([mod, "shift"], "h", lazy.layout.shuffle_left(), desc="Move window to the left"),
-    Key([mod, "shift"], "l", lazy.layout.shuffle_right(), desc="Move window to the right"),
+    Key([mod, "shift"], "h", lazy.layout.shuffle_left(),
+        desc="Move window to the left"),
+    Key([mod, "shift"], "l", lazy.layout.shuffle_right(),
+        desc="Move window to the right"),
     Key([mod, "shift"], "j", lazy.layout.shuffle_down(), desc="Move window down"),
     Key([mod, "shift"], "k", lazy.layout.shuffle_up(), desc="Move window up"),
     # Grow windows. If current window is on the edge of screen and direction
     # will be to screen edge - window would shrink.
-    Key([mod, "control"], "h", lazy.layout.grow_left(), desc="Grow window to the left"),
-    Key([mod, "control"], "l", lazy.layout.grow_right(), desc="Grow window to the right"),
+    Key([mod, "control"], "h", lazy.layout.grow_left(),
+        desc="Grow window to the left"),
+    Key([mod, "control"], "l", lazy.layout.grow_right(),
+        desc="Grow window to the right"),
     Key([mod, "control"], "j", lazy.layout.grow_down(), desc="Grow window down"),
     Key([mod, "control"], "k", lazy.layout.grow_up(), desc="Grow window up"),
     Key([mod], "n", lazy.layout.normalize(), desc="Reset all window sizes"),
@@ -81,23 +92,35 @@ keys = [
     Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),
     Key([mod, "control"], "r", lazy.reload_config(), desc="Reload the config"),
     Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
-    #Key([mod], "r", lazy.spawncd(), desc="Spawn a command using a prompt widget"),
-    #My keybindings
-    #browser
-    Key([mod],"b", lazy.spawn("librewolf")),
-    #control volume
-    Key([mod],"r", lazy.spawn("rofi -show drun")),
+    # Key([mod], "r", lazy.spawncd(), desc="Spawn a command using a prompt widget"),
+    # My keybindings
+    # browser
+    Key([mod], "b", lazy.spawn("firefox")),
+    Key([mod], "m", lazy.spawn("pcmanfm")),
+    # control volume
+    Key([mod], "r", lazy.spawn("rofi -show drun")),
     # Increase volume with XF86AudioRaiseVolume key
-    Key([], "XF86AudioRaiseVolume", lazy.spawn("amixer -q set Master 5%+")),
+    Key([], "XF86AudioRaiseVolume", lazy.spawn(
+        "pactl -- set-sink-volume 0 +10%")),
     # Decrease volume with XF86AudioLowerVolume key
-    Key([], "XF86AudioLowerVolume", lazy.spawn("amixer -q set Master 5%-")),
+    Key([], "XF86AudioLowerVolume", lazy.spawn(
+        "pactl -- set-sink-volume 0 -10%")),
     # Mute/unmute with XF86AudioMute key
     Key([], "XF86AudioMute", lazy.spawn("amixer -q set Master toggle")),
     # launch screenshot program
     Key([mod], "Home", lazy.spawn("flameshot gui")),
 ]
 
-groups = [Group(i) for i in "asdfuiop"]
+groups = [Group("a", matches=[Match(wm_class=["firefox"])]),
+          Group("s", matches=[Match(wm_class=["pcmanfm"])]),
+          Group("d", matches=[Match(wm_class=["electron"])]),
+          Group("f", matches=[Match(wm_class=["Eom"])]),
+          Group("u", matches=[Match(wm_class=["smplayer"])]),
+          Group("i", matches=[Match(wm_class=["TelegramDesktop"])]),
+          Group("o", matches=[Match(wm_class=["qBittorrent"])]),
+          Group("p", matches=[Match(wm_class=["steam"])])
+          ]
+
 
 for i in groups:
     keys.extend(
@@ -114,7 +137,8 @@ for i in groups:
                 [mod, "shift"],
                 i.name,
                 lazy.window.togroup(i.name, switch_group=True),
-                desc="Switch to & move focused window to group {}".format(i.name),
+                desc="Switch to & move focused window to group {}".format(
+                    i.name),
             ),
             # Or, use below if you prefer not to switch to that group.
             # # mod1 + shift + letter of group = move focused window to group
@@ -123,9 +147,11 @@ for i in groups:
         ]
     )
 
-layouts = [ 
+
+layouts = [
     layout.Max(margin=5),
-    layout.Columns(border_normal='5c6965', border_focus="f0fff0", border_width=2, rounded=True, margin=5),
+    layout.Columns(border_normal='5c6965', border_focus="f0fff0",
+                   border_width=2, rounded=True, margin=5),
     layout.Floating(),
     # layout.Stack(num_stacks=5,border_width=2,margin=15),
     # Try more layouts by unleashing below layouts.
@@ -143,7 +169,7 @@ layouts = [
 widget_defaults = dict(
     font="Fira Code",
     fontsize=12,
-    padding=3,
+    padding=2,
 )
 extension_defaults = widget_defaults.copy()
 
@@ -153,10 +179,10 @@ screens = [
             [
                 widget.CurrentLayout(font='Roboto'),
                 widget.GroupBox(highlight_method='block',
-                disable_drag=True,
-                rounded=True,
-                use_mouse_wheel=False,
-                highlight_color=['000000','EFD0CA']),
+                                disable_drag=True,
+                                rounded=True,
+                                use_mouse_wheel=False,
+                                highlight_color=['000000', 'EFD0CA']),
                 widget.Prompt(),
                 widget.Sep(padding=10),
                 widget.WindowName(),
@@ -168,48 +194,48 @@ screens = [
                 ),
                 # NB Systraywidget.Sep(padding=50,linewidth=0), is incompatible with Wayland, consider using StatusNotifier instead
                 # widget.StatusNotifier(),
-                widget.Sep(padding=10,linewidth=0),
+                widget.Sep(padding=10, linewidth=0),
                 widget.Clock(format="%d-%m-%Y %a %H:%M"),
-                widget.Sep(padding=180,linewidth=0),
+                widget.Sep(padding=180, linewidth=0),
                 widget.CPU(),
-                widget.ThermalSensor(),
-                widget.Sep(padding=10,linewidth=0),
+                widget.ThermalSensor(tag_sensor='Tctl'),
+                widget.Sep(padding=10, linewidth=0),
                 widget.Memory(),
-                widget.Sep(padding=10,linewidth=0),
+                widget.Sep(padding=10, linewidth=0),
                 widget.DF(visible_on_warn=False),
-                widget.DF(visible_on_warn=False,partition='/home'),
-                widget.Sep(padding=10,linewidth=0),
+                widget.DF(visible_on_warn=False, partition='/home'),
+                widget.Sep(padding=10, linewidth=0),
                 widget.CheckUpdates(distro='Arch_checkupdates'),
                 widget.Sep(padding=10),
                 widget.Systray(),
-                widget.Sep(padding=10,linewidth=0),
+                widget.Sep(padding=10, linewidth=0),
                 widget.Notify(),
                 # widget.Sep(padding=10),
-                
-                
+
+
 
             ],
             24,
             # border_width=[2, 0, 2, 0],  # Draw top and bottom borders
             # border_color=["ff00ff", "000000", "ff00ff", "000000"]  # Borders are magenta
             background='5C6965',
-            opacity = 0.85,
-			rounded = True,
+            opacity=0.85,
+            rounded=True,
         ),
     ),
 ]
 
 # Drag floating layouts.
 mouse = [
-    Drag([mod], "Button1", lazy.window.set_position_floating(), start=lazy.window.get_position()),
-    Drag([mod], "Button3", lazy.window.set_size_floating(), start=lazy.window.get_size()),
-    Click([mod], "Button2",lazy.window.bring_to_front()),
+    Drag([mod], "Button1", lazy.window.set_position_floating(),
+         start=lazy.window.get_position()),
+    Drag([mod], "Button3", lazy.window.set_size_floating(),
+         start=lazy.window.get_size()),
+    Click([mod], "Button2", lazy.window.bring_to_front()),
 ]
 
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: list
-follow_mouse_focus = True
-bring_front_click = False
 cursor_warp = False
 floating_layout = layout.Floating(
     float_rules=[
@@ -224,7 +250,7 @@ floating_layout = layout.Floating(
     ]
 )
 auto_fullscreen = True
-focus_on_window_activation = "smart"
+
 reconfigure_screens = True
 
 # If things like steam games want to auto-minimize themselves when losing

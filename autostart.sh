@@ -10,3 +10,4 @@ pasystray &
 xpad &
 muezzin &
 uget-gtk &
+xfce4-power-manager &
