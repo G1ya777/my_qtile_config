@@ -24,7 +24,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from libqtile import bar, layout, widget
+from qtile_extras import widget as widget_extras
+from libqtile import bar, layout, widget, qtile
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
@@ -37,8 +38,16 @@ from libqtile.log_utils import logger
 
 @hook.subscribe.startup_once
 def autostart():
-    home = os.path.expanduser('~/.config/qtile/autostart.sh')
+    home = os.path.expanduser("~/.config/qtile/autostart.sh")
     subprocess.Popen([home])
+
+
+@lazy.function
+def float_to_front(qtile):
+    for group in qtile.groups:
+        for window in group.windows:
+            if window.floating:
+                window.cmd_bring_to_front()
 
 
 focus_on_window_activation = "focus"
@@ -48,31 +57,37 @@ follow_mouse_focus = False
 mod = "mod4"
 terminal = guess_terminal()
 
+
 keys = [
     # A list of available commands that can be bound to keys can be found
     # at https://docs.qtile.org/en/latest/manual/config/lazy.html
     # Switch between windows
+    Key([mod, "control"], "f", float_to_front),
     Key([mod], "h", lazy.layout.left(), desc="Move focus to left"),
     Key([mod], "l", lazy.layout.right(), desc="Move focus to right"),
     Key([mod], "j", lazy.layout.down(), desc="Move focus down"),
     Key([mod], "k", lazy.layout.up(), desc="Move focus up"),
-    Key([mod], "space", lazy.layout.next(),
-        desc="Move window focus to other window"),
+    Key([mod], "space", lazy.layout.next(), desc="Move window focus to other window"),
     # Move windows in stack.
     Key([mod], "c", lazy.layout.client_to_next()),
     # Moving out of range in Columns layout will create new column.
-    Key([mod, "shift"], "h", lazy.layout.shuffle_left(),
-        desc="Move window to the left"),
-    Key([mod, "shift"], "l", lazy.layout.shuffle_right(),
-        desc="Move window to the right"),
+    Key(
+        [mod, "shift"], "h", lazy.layout.shuffle_left(), desc="Move window to the left"
+    ),
+    Key(
+        [mod, "shift"],
+        "l",
+        lazy.layout.shuffle_right(),
+        desc="Move window to the right",
+    ),
     Key([mod, "shift"], "j", lazy.layout.shuffle_down(), desc="Move window down"),
     Key([mod, "shift"], "k", lazy.layout.shuffle_up(), desc="Move window up"),
     # Grow windows. If current window is on the edge of screen and direction
     # will be to screen edge - window would shrink.
-    Key([mod, "control"], "h", lazy.layout.grow_left(),
-        desc="Grow window to the left"),
-    Key([mod, "control"], "l", lazy.layout.grow_right(),
-        desc="Grow window to the right"),
+    Key([mod, "control"], "h", lazy.layout.grow_left(), desc="Grow window to the left"),
+    Key(
+        [mod, "control"], "l", lazy.layout.grow_right(), desc="Grow window to the right"
+    ),
     Key([mod, "control"], "j", lazy.layout.grow_down(), desc="Grow window down"),
     Key([mod, "control"], "k", lazy.layout.grow_up(), desc="Grow window up"),
     Key([mod], "n", lazy.layout.normalize(), desc="Reset all window sizes"),
@@ -95,31 +110,54 @@ keys = [
     # Key([mod], "r", lazy.spawncd(), desc="Spawn a command using a prompt widget"),
     # My keybindings
     # browser
-    Key([mod], "b", lazy.spawn("firefox")),
-    Key([mod], "m", lazy.spawn("pcmanfm")),
+    Key(
+        [mod], "b", lazy.spawn("brave --silent-debugger-extension-api --disable-webgl")
+    ),
+    Key([mod], "m", lazy.spawn("thunar")),
     # control volume
-    Key([mod], "r", lazy.spawn("rofi -show drun")),
+    Key([mod], "r", lazy.spawn('rofi -font "Fira Sans 16" -show drun')),
     # Increase volume with XF86AudioRaiseVolume key
-    Key([], "XF86AudioRaiseVolume", lazy.spawn(
-        "pactl -- set-sink-volume 0 +10%")),
+    Key(
+        [],
+        "XF86AudioRaiseVolume",
+        lazy.spawn("pulsemixer --change-volume +10 --max-volume 100"),
+    ),
     # Decrease volume with XF86AudioLowerVolume key
-    Key([], "XF86AudioLowerVolume", lazy.spawn(
-        "pactl -- set-sink-volume 0 -10%")),
+    Key(
+        [],
+        "XF86AudioLowerVolume",
+        lazy.spawn("pulsemixer --change-volume -10 --max-volume 100"),
+    ),
     # Mute/unmute with XF86AudioMute key
-    Key([], "XF86AudioMute", lazy.spawn("amixer -q set Master toggle")),
+    Key([], "XF86AudioMute", lazy.spawn("pulsemixer --toggle-mute")),
     # launch screenshot program
     Key([mod], "Home", lazy.spawn("flameshot gui")),
 ]
 
-groups = [Group("a", matches=[Match(wm_class=["firefox"])]),
-          Group("s", matches=[Match(wm_class=["pcmanfm"])]),
-          Group("d", matches=[Match(wm_class=["electron"])]),
-          Group("f", matches=[Match(wm_class=["Eom"])]),
-          Group("u", matches=[Match(wm_class=["smplayer"])]),
-          Group("i", matches=[Match(wm_class=["TelegramDesktop"])]),
-          Group("o", matches=[Match(wm_class=["qBittorrent"])]),
-          Group("p", matches=[Match(wm_class=["steam"])])
-          ]
+groups = [
+    Group("a", matches=[Match(wm_class=["firefox", "Brave-browser"])]),
+    Group("s", matches=[Match(wm_class=["Chat-gpt"])]),
+    Group("d", matches=[Match(wm_class=["code-oss"])]),
+    Group("f", matches=[Match(wm_class=["Eom", "thunar"])]),
+    Group("g", matches=[Match(wm_class=["TelegramDesktop"])]),
+    Group("u", matches=[Match(wm_class=["smplayer"])]),
+    Group("i", matches=[Match(wm_class=["Uget-gtk", "qBittorrent"])]),
+    Group("o"),
+    Group(
+        "p",
+        matches=[
+            Match(
+                wm_class=[
+                    "steam",
+                    "Lutris",
+                    "Steam",
+                    "heroic",
+                    "Apex Legends",
+                ]
+            )
+        ],
+    ),
+]
 
 
 for i in groups:
@@ -137,8 +175,7 @@ for i in groups:
                 [mod, "shift"],
                 i.name,
                 lazy.window.togroup(i.name, switch_group=True),
-                desc="Switch to & move focused window to group {}".format(
-                    i.name),
+                desc="Switch to & move focused window to group {}".format(i.name),
             ),
             # Or, use below if you prefer not to switch to that group.
             # # mod1 + shift + letter of group = move focused window to group
@@ -149,10 +186,27 @@ for i in groups:
 
 
 layouts = [
-    layout.Max(margin=5),
-    layout.Columns(border_normal='5c6965', border_focus="f0fff0",
-                   border_width=2, rounded=True, margin=5),
-    layout.Floating(),
+    layout.Max(
+        margin=[3, 5, 5, 3],
+        border_normal="#808080",
+        border_focus="#ac4f06",
+        border_width=2,
+        rounded=True,
+    ),
+    layout.Columns(
+        border_normal="#808080",
+        border_focus="#ac4f06",
+        border_width=2,
+        rounded=True,
+        margin=[3, 5, 5, 3],
+    ),
+    layout.Floating(
+        border_normal="#808080",
+        border_focus="#ac4f06",
+        border_width=2,
+        rounded=True,
+        margin=[5, 0, 0, 5],
+    ),
     # layout.Stack(num_stacks=5,border_width=2,margin=15),
     # Try more layouts by unleashing below layouts.
     # layout.Bsp(),
@@ -167,8 +221,8 @@ layouts = [
 ]
 
 widget_defaults = dict(
-    font="Fira Code",
-    fontsize=12,
+    font="Fira Mono",
+    fontsize=14,
     padding=2,
 )
 extension_defaults = widget_defaults.copy()
@@ -177,60 +231,100 @@ screens = [
     Screen(
         top=bar.Bar(
             [
-                widget.CurrentLayout(font='Roboto'),
-                widget.GroupBox(highlight_method='block',
-                                disable_drag=True,
-                                rounded=True,
-                                use_mouse_wheel=False,
-                                highlight_color=['000000', 'EFD0CA']),
-                widget.Prompt(),
-                widget.Sep(padding=10),
-                widget.WindowName(),
+                # widget.CurrentLayout(font="Fira Mono", max_chars=3),
+                widget.CurrentLayoutIcon(),
+                widget.Sep(padding=10, foreground="ffffe4"),
+                widget.GroupBox(
+                    font="Fira Mono",
+                    disable_drag=True,
+                    rounded=True,
+                    use_mouse_wheel=False,
+                    highlight_method="line",
+                    inactive="#808080",
+                    highlight_color=["#ac4f06", "#ac4f06"],
+                ),
+                widget.Sep(padding=10, foreground="ffffe4"),
+                widget.WindowName(
+                    empty_group_string="                                            Arch Linux",
+                    fontsize=12,
+                    font="Fira Sans",
+                    scroll=True,
+                    scroll_fixed_width=True,
+                    width=275,
+                ),
                 widget.Chord(
                     chords_colors={
                         "launch": ("#ff0000", "#ffffff"),
                     },
                     name_transform=lambda name: name.upper(),
                 ),
-                # NB Systraywidget.Sep(padding=50,linewidth=0), is incompatible with Wayland, consider using StatusNotifier instead
-                # widget.StatusNotifier(),
                 widget.Sep(padding=10, linewidth=0),
-                widget.Clock(format="%d-%m-%Y %a %H:%M"),
-                widget.Sep(padding=180, linewidth=0),
+                widget.Sep(padding=10, foreground="ffffe4"),
+                widget.Net(
+                    interface="enp10s0",
+                    format="net {down:6.2f}{down_suffix:<2} ↓↑{up:6.2f}{up_suffix:<2}",
+                    prefix="M",
+                ),
+                widget.Sep(padding=30, foreground="ffffe4"),
+                widget.NvidiaSensors(format="GPU {temp}"),
+                widget.Sep(padding=30, foreground="ffffe4"),
+                widget.Clock(format="%d-%m-%Y %a %H:%M", font="Fira Sans", fontsize=15),
+                widget.Sep(padding=20, foreground="ffffe4"),
                 widget.CPU(),
-                widget.ThermalSensor(tag_sensor='Tctl'),
-                widget.Sep(padding=10, linewidth=0),
-                widget.Memory(),
-                widget.Sep(padding=10, linewidth=0),
-                widget.DF(visible_on_warn=False),
-                widget.DF(visible_on_warn=False, partition='/home'),
-                widget.Sep(padding=10, linewidth=0),
-                widget.CheckUpdates(distro='Arch_checkupdates'),
-                widget.Sep(padding=10),
-                widget.Systray(),
-                widget.Sep(padding=10, linewidth=0),
-                widget.Notify(),
+                widget.ThermalSensor(tag_sensor="Tctl"),
+                widget.Sep(padding=10, foreground="ffffe4"),
+                widget.Memory(
+                    format="RAM {MemUsed: .0f}{mm} / 32G",
+                ),
+                widget.Sep(padding=10, foreground="ffffe4"),
+                widget.DF(
+                    visible_on_warn=False,
+                    warn_space=20,
+                    format="dir:{p} ({uf}{m} / {s}{m} free)",
+                    fontsize=12,
+                ),
+                widget.DF(
+                    visible_on_warn=False,
+                    partition="/mnt/Downloads",
+                    fmt="dir:  dow {}",
+                    warn_space=100,
+                    format="({uf}{m} / {s}{m} free)",
+                    fontsize=12,
+                ),
+                widget.Sep(padding=7, foreground="ffffe4"),
+                widget.Systray(icon_size=22),
+                widget.TextBox(
+                    text="RW",
+                    mouse_callbacks={
+                        "Button1": lambda: qtile.cmd_spawn(
+                            "nitrogen --random --set-zoom-fill --save /usr/share/backgrounds"
+                        )
+                    },
+                ),
                 # widget.Sep(padding=10),
-
-
-
             ],
             24,
             # border_width=[2, 0, 2, 0],  # Draw top and bottom borders
             # border_color=["ff00ff", "000000", "ff00ff", "000000"]  # Borders are magenta
-            background='5C6965',
-            opacity=0.85,
+            background="#3d3d3d",
+            opacity=0.925,
             rounded=True,
+            margin=[2, 2, 2, 2],
         ),
     ),
 ]
 
 # Drag floating layouts.
 mouse = [
-    Drag([mod], "Button1", lazy.window.set_position_floating(),
-         start=lazy.window.get_position()),
-    Drag([mod], "Button3", lazy.window.set_size_floating(),
-         start=lazy.window.get_size()),
+    Drag(
+        [mod],
+        "Button1",
+        lazy.window.set_position_floating(),
+        start=lazy.window.get_position(),
+    ),
+    Drag(
+        [mod], "Button3", lazy.window.set_size_floating(), start=lazy.window.get_size()
+    ),
     Click([mod], "Button2", lazy.window.bring_to_front()),
 ]
 
@@ -238,6 +332,11 @@ dgroups_key_binder = None
 dgroups_app_rules = []  # type: list
 cursor_warp = False
 floating_layout = layout.Floating(
+    border_normal="#808080",
+    border_focus="#ac4f06",
+    border_width=2,
+    rounded=True,
+    margin=[2, 0, 0, 5],
     float_rules=[
         # Run the utility of `xprop` to see the wm class and name of an X client.
         *layout.Floating.default_float_rules,
@@ -247,7 +346,7 @@ floating_layout = layout.Floating(
         Match(wm_class="ssh-askpass"),  # ssh-askpass
         Match(title="branchdialog"),  # gitk
         Match(title="pinentry"),  # GPG key password entry
-    ]
+    ],
 )
 auto_fullscreen = True
 
